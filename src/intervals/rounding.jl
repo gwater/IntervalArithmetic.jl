@@ -9,24 +9,28 @@ interval rounding types, e.g.
 +(IntervalRounding{:slow}, a, b, RoundDown)
 +(IntervalRounding{:none}, a, b, RoundDown)
 
-The current allowed rounding types are
-- :tight     # fast, tight (correct) rounding with errorfree arithmetic via FastRounding.jl
-- :accurate # fast "accurate" rounding using prevfloat and nextfloat  (slightly wider than needed)
-- :slow    # tight (correct) rounding by changing rounding mode (slow)
-- :none     # no rounding (for speed comparisons; no enclosure is guaranteed)
-
 The function `setrounding(Interval, rounding_type)` then defines rounded
  functions *without* an explicit rounding type, e.g.
 
 sin(x, r::RoundingMode) = sin(IntervalRounding{:slow}, x, r)
 
 These are overwritten when `setrounding(Interval, rounding_type)` is called again.
-
-In Julia v0.6 and later (but *not* in Julia v0.5), this automatically redefines all relevant functions, in particular those used in +(a::Interval, b::Interval) etc., so that all interval functions automatically use the correct interval rounding type from then on.
 =#
 
 
-"""Interval rounding trait type"""
+"""
+    IntervalRounding{T}
+
+Interval rounding trait type.
+
+Allowed rounding types are
+- `:tight`: fast, tight (correct) rounding with errorfree arithmetic via
+            FastRounding.jl.
+- `:accurate`: fast "accurate" rounding using prevfloat and nextfloat
+               (slightly wider than needed).
+- `:slow`: tight (correct) rounding by changing rounding mode (slow).
+- `:none`: no rounding (for speed comparisons; no enclosure is guaranteed).
+"""
 struct IntervalRounding{T} end
 
 
@@ -91,12 +95,6 @@ for (op, f) in ( (:+, :add), (:-, :sub), (:*, :mul), (:/, :div) )
         end
     end
 end
-
-# inv and sqrt:
-
-# inv(::IntervalRounding{:tight}, a::T, r::RoundingMode) where T<:Union{Float32, Float64} = inv_round(a, r)
-#
-# sqrt(::IntervalRounding{:tight}, a::T, r::RoundingMode) where T<:Union{Float32, Float64} = sqrt_round(a, r)
 
 
 for T in (Float32, Float64)
@@ -280,8 +278,7 @@ end
 Set the rounding type used for all interval calculations on Julia v0.6 and above.
 Valid `rounding_type`s are $rounding_types.
 """
-function setrounding(::Type{Interval}, rounding_type::Symbol)
-
+function setrounding(::Type{F}, rounding_type::Symbol) where {F <: AbstractFlavor}
     # suppress redefinition warnings:
     # modified from OhMyREPL.jl
 
@@ -326,10 +323,10 @@ function setrounding(::Type{Interval}, rounding_type::Symbol)
 
 end
 
-rounding(Interval) = current_rounding_type[]
-
-
-
 # default: correct rounding
 const current_rounding_type = Symbol[:undefined]
-setrounding(Interval, :tight)
+
+for Flavor in supported_flavors:
+    setrounding(Flavor, :tight)
+    rounding(Flavor) = current_rounding_type[]
+end
