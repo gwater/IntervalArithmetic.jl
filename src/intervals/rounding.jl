@@ -326,7 +326,7 @@ end
 # default: correct rounding
 const current_rounding_type = Symbol[:undefined]
 
-for Flavor in supported_flavors:
+for Flavor in supported_flavors
     setrounding(Flavor, :tight)
     rounding(Flavor) = current_rounding_type[]
 end
