@@ -30,4 +30,4 @@ function Base.setrounding(f::Function, ::Type{Rational{T}},
 end
 
 float(x::F) where {T, F <: AbstractFlavor{T}} = atomic(reparametrize(F, float(T)), x)
-big(x::F) where {F <: AbstractFlavor = atomic(reparametrize(F, BigFloat), x)
+big(x::F) where {F <: AbstractFlavor} = atomic(reparametrize(F, BigFloat), x)
